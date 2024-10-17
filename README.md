@@ -31,4 +31,3 @@ Java heap space - 2GB+ <br/>
 
 All pages you can find Global Administration -> Garantis License Analyzer
 ![image](https://github.com/Garantis-Solutions/com.garantis.polarion.extension.license_analyzer/assets/51190837/dd24c280-6495-4ee7-9662-8c63141f0b6a)
-
