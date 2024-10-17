@@ -1,0 +1,5 @@
+#macro(new_error $text)
+  <div class="polarion-errormessage"><span class="polarion-messagetype"> Error: </span>$text</div>
+#end
+
+#new_error($licenseManager.getStatus.getMessage)

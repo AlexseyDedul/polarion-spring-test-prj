@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.garantis.polarion.extension.license.analyzer.model"},{"l":"com.garantis.polarion.extension.license.analyzer.service"}];updateSearchResults();

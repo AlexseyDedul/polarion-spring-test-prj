@@ -1,0 +1,27 @@
+Bundle-Vendor: Garantis IT Solutions
+Support-Email: support@garantis-solutions.com
+Bundle-Name: User Management
+Require-Bundle: com.polarion.portal.tomcat,
+ org.postgresql,
+ com.fasterxml.jackson,
+ com.fasterxml.jackson.jaxrs,
+ com.polarion.alm.ui,
+ com.polarion.platform.jobs,
+ com.polarion.platform.guice,
+ com.polarion.alm.tracker,
+ org.glassfish.jersey,
+ io.swagger,
+ slf4j.api,
+ org.springframework.spring-core,
+ org.springframework.spring-web,
+ org.springframework.spring-core,
+ org.springframework.spring-web,
+ org.springframework.data-commons,
+ org.springframework.data-jpa,
+ org.springframework.spring-beans,
+ org.springframework.spring-context,
+ org.springframework.spring-jdbc,
+ org.springframework.spring-orm,
+ javax.persistence-api,
+ org.hibernate.orm.core
+Export-Package: com.garantis.polarion.extension.license.analyzer

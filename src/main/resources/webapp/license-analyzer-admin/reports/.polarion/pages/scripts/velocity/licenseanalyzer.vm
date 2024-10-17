@@ -1,0 +1,233 @@
+<style>
+	table.serge-table-1 {
+		border-collapse:collapse;
+		border:1px solid #005F87;
+	}
+	tr.serge-th-1 th {
+		text-align:left;
+		color:#004669;
+		padding:5px;
+		background-color:#EBF0F5;
+		border:1px solid #005F87;
+	 }
+	 .td1 {
+		vertical-align:top;
+		padding:5px;
+		border-top:1px solid #005F87;
+		border-right:1px solid #005F87;
+	}
+
+	.td2 {
+		padding:5px;
+		border-top:1px solid #005F87;
+		border-right:1px solid #005F87;
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	table.squares-table {
+		width: 125px;
+		height: 25px;
+	}
+</style>
+
+#macro(new_info $text)
+  <div class="polarion-infomessage"><span class="polarion-messagetype"> Info: </span>$text</div>
+#end
+
+#macro(new_warning $text)
+  <div class="polarion-warningmessage"><span class="polarion-messagetype"> Warning: </span>$text</div>
+#end
+
+#macro(chartPrint $statusNameChart $yValues $limits)
+	{
+		chart: {
+			##type: 'spline',
+			type: 'line',
+			zoomType: 'x'
+		},
+		title: {
+			text: '$statusNameChart',
+            style: {
+            color: '#005F87',
+            textAlign: 'center'
+            }
+		},
+		xAxis: {
+      type: "datetime",
+			crosshair: true
+    },
+			yAxis: {
+            tickInterval: 1,
+						gridLineWidth: 1,
+						plotLines: [$limits],
+						min: 0,
+						title: {
+							text: 'Number of users',
+							align: 'middle'
+						},
+						labels: {
+							overflow: 'justify'
+						},
+		},
+        tooltip: {
+        headerFormat: '&lt;span style="font-size:10px"&gt;Date: &lt;b&gt;{point.key}&lt;/b&gt;&lt;/span&gt;&lt;table&gt;',
+        pointFormat: '&lt;tr&gt;&lt;td style="color:{series.color};padding:0"&gt;&lt;b&gt;{series.name}: &lt;/b&gt;&lt;/td&gt;' +
+        '&lt;td style="padding:0"&gt;&lt;b&gt;{point.y} {point.key} &lt;/b&gt;items&lt;/td&gt;&lt;/tr&gt;',
+        footerFormat: '&lt;/table&gt;',
+        ${esc.h}${esc.h}shared: true,
+        useHTML: true
+    },
+
+		plotOptions: {
+			bar:{
+				dataLabels:{
+					enabled:true
+				}
+			},
+			series: {
+            marker: {
+                enabled: true
+            }
+        }
+		},
+		credits: {
+			enabled: false
+		},
+		series: [$yValues]
+  }
+#end
+
+#macro(showBarChart $chartName $categories $data)
+	{
+		chart: {
+			type: 'bar',
+			zoomType: 'x'
+		},
+		title: {
+			text: '$chartName',
+      style: {
+        color: '#005F87',
+        textAlign: 'center'
+      }
+		},
+		yAxis: {
+			title: {
+				text: 'Login Events'
+			}
+		},
+		xAxis: {
+			title: {
+      	text: 'Users'
+    	},
+    	categories: [$categories]
+  	},
+		plotOptions: {
+			bar:{
+				dataLabels:{
+					enabled:true
+				}
+			},
+			series: {
+            marker: {
+                enabled: false
+            }
+        }
+		},
+		credits: {
+			enabled: false
+		},
+	  series: [{
+	    data: [$data],
+	  }]
+	}
+#end
+
+#set($startDate = $pageParameters.startDate.value)
+#set($endDate = $pageParameters.endDate.value)
+##set($start = $dateTool.format('YYYY-MM-dd', $startDate))
+##set($end = $dateTool.format('YYYY-MM-dd', $endDate))
+
+#set($licenseStatus = $licenseManager.getStatus.getStatus)
+
+#if($licenseStatus.equals("INFO"))
+	#new_info($licenseManager.getStatus.getMessage)
+#end
+
+#if($licenseStatus.equals("WARNING"))
+	#new_warning($licenseManager.getStatus.getMessage)
+#else
+	
+	##New logic
+	#set($statisticIds = $statisticService.getStatisticIds())
+
+	#set($chartTitle = "License Usage per Day")
+
+	<h2>$chartTitle</h2>
+	<table class="serge-table-1" >
+		<tr class="serge-th-1">
+			<th style="width:30%;">License Name</th>
+			<th style="width:20%;">Configured Value</th>
+			<th style="width:20%;">Limit Value</th>
+		</tr>
+		#foreach($id in $statisticIds)
+			#set($statistic = $statisticService.getStatisticById($id))
+			<tr class="serge-td-1">
+				<td class="td1">$id</td>
+				<td class="td1">$statistic.getPeak</td>
+				<td class="td1">$statistic.getLimit</td>
+			</tr>
+		#end
+	</table>
+	<br>
+
+	#set($limitsResult = "")
+	#foreach($id in $statisticIds)
+		#set($statistic = $statisticService.getStatisticById($id))
+		#set($limitsResult = "{value: $statistic.getLimit, color: 'red', dashStyle: 'shortdash', zIndex: 5, width: 2, label: {text: '$id'}},$limitsResult")
+	#end
+
+	#set($limitsResult = $limitsResult.substring(0, $mathTool.sub($limitsResult.length(), 1)))
+	#set($series = "$renderReport.getSeries($startDate, $endDate)")
+
+	<div class="polarion-rp-widget-part" data-widget="com.polarion.scriptedChart">
+	  <span class="polarion-rp-widget-parameters">
+	    <sub id="script">
+	      <sub id="script">
+	        #chartPrint($chartTitle $series $limitsResult)
+	      </sub>
+	    </sub>
+	  </span>
+	</div>
+
+	#set($licenseKinds = $userSessionHistoryService.getLicenseKind())
+	#set($licenseTypes = $userSessionHistoryService.getLicenseTypes())
+	#set($usersFromBackup = $userSessionHistoryService.getAllUsers())
+
+	#foreach($kind in $licenseKinds)
+		#foreach($type in $licenseTypes)
+			#set($userFilter = $renderReport.filterUsers($usersFromBackup, "$kind", "$type"))
+			#set($userStatisticsMap = $renderReport.getStatisticForUsers($userFilter, $startDate, $endDate))
+			#if($userStatisticsMap.containsKey('category') && $userStatisticsMap.containsKey('data'))
+				#set($summaryTypeCat = "$userStatisticsMap.get('category')")
+				#set($summaryTypeData = "$userStatisticsMap.get('data')")
+				#if(!$summaryTypeData.equals(""))
+
+					<h2>Login Events ($kind$type). Users: $userFilter.size</h2>
+				              
+				  <div class="polarion-rp-widget-part" data-widget="com.polarion.scriptedChart">
+				      <span class="polarion-rp-widget-parameters">
+				          <sub id="script">
+				              <sub id="script">
+				                  #showBarChart("Login Events" $summaryTypeCat $summaryTypeData)
+				              </sub>
+				          </sub>
+				      </span>
+				  </div>
+			  #end
+		  #end
+	  #end
+  #end
+
+	
+#end

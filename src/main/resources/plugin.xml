@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="com.polarion.portal.tomcat.webapps">
+      <webapp
+            contextRoot="webapp/license-analyzer"
+            name="polarion/license-analyzer"
+            priority="0">
+      </webapp>
+   </extension>
+
+   <extension
+           point="com.polarion.portal.tomcat.webapps">
+      <webapp
+              name="polarion/license-analyzer-admin"
+              contextRoot="webapp/license-analyzer-admin">
+      </webapp>
+   </extension>
+
+</plugin>

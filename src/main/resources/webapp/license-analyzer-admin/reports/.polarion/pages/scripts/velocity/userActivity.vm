@@ -1,0 +1,280 @@
+## @Version=1@
+## 
+## File Name: userActivity.vm
+## Widget Name: User Activity in Polarion
+## Description: Traceability Table of users
+##
+## Date               Author          Description of Change
+## ---------------------------------------------------------------------------------------------
+## 01-Dec-2023       AD              Initial Release
+## 27-May-2024       AD              Updated last login session for users
+## ====================================================================================================
+
+## Text Constant
+## -----------------------------------
+
+#set($parametersArr = $pageParameters.selectView.values)
+#set($parameterNumberUsers = $pageParameters.numberUsers.value)
+
+
+#set($today = $dateTool.getDate())
+#set($allUsers = $projectService.getUsers())
+#set($arrayTable = [])
+
+################### MACRO START ##################
+
+#macro(new_info $text)
+  <div class="polarion-infomessage"><span class="polarion-messagetype"> Info: </span>$text</div>
+#end
+
+## -----------------------------------------------------------------
+## Macro Name: checkLoggedInForUser
+## Description: This macro checks last loggin date for user in polarion use parameter. 
+##              Input parameters are "notLog" and "log". 
+##              If the user's login date matches the input parameter then the macro output "true" value.
+## Inputs     : user = poarion user.
+##              logParam = match parameter.
+## Output     : logginUserFlag = match flag.
+## Return     : None
+##
+## -----------------------------------------------------------------
+#macro(checkLoggedInForUser $user $logParam)
+  #set($logginUserFlag = false)
+
+  #if($userSessionsMap.containsKey($!user.id))
+    #set($lastLoginDate = $userSessionsMap.get($!user.id).getLastSession().getDateLogin())
+
+    #if($lastLoginDate)
+      #set($compareRes = $dateTool.difference($lastLoginDate, $dateTool.getDate()))
+
+      #if($logParam.equals("notLog"))
+        #if($mathTool.toInteger($compareRes.getMonths()) > $mathTool.toInteger(2))
+          #set($logginUserFlag = true)
+        #end  
+      #elseif($logParam.equals("log"))
+        #if($mathTool.toInteger($compareRes.getMonths()) < $mathTool.toInteger(3))
+          #set($logginUserFlag = true)
+        #end  
+      #end 
+    #elseif(!$lastLoginDate && $logParam.equals("notLog"))
+      #set($logginUserFlag = true)
+    #end
+
+  #elseif($logParam.equals("notLog"))
+    #set($logginUserFlag = true)
+  #end
+#end
+
+## -----------------------------------------------------------------
+## Macro Name: checkMadeChangesForUser
+## Description: This macro checks last made changes date for user in polarion use parameter. 
+##              Input parameters are "notMade" and "made". 
+##              If the user's date of made changes matches the input parameter then the macro output "true" value.
+## Inputs     : user = poarion user.
+##              logParam = match parameter.
+## Output     : logginUserFlag = match flag.
+## Return     : None
+##
+## -----------------------------------------------------------------
+#macro(checkMadeChangesForUser $user $logParam)
+  #set($chandesUserFlag = false)
+  #set($Revision = $trackerService.getDataService().sqlSearch("SELECT rev.C_URI FROM REVISION rev WHERE rev.C_AUTHOR = '$user.id' ORDER BY rev.C_CREATED DESC LIMIT 1"))
+  
+  #if($Revision.size > 0)
+
+    #set($lastRevision = $Revision.get(0))
+    #set($dateOfLastRev = $lastRevision.getCreated)
+    #set($lastChange = $dateTool.difference($dateOfLastRev, $dateTool.getDate()))
+
+    #if($logParam.equals("notMade"))
+      #if($mathTool.toInteger($lastChange.getMonths()) > $mathTool.toInteger(2))
+        #set($chandesUserFlag = true)
+      #end 
+    #elseif($logParam.equals("made"))
+      #if($mathTool.toInteger($lastChange.getMonths()) < $mathTool.toInteger(3))
+        #set($chandesUserFlag = true)
+      #end 
+    #end
+
+  #elseif(($Revision.size == 0) && $logParam.equals("notMade"))
+    #set($chandesUserFlag = true)
+  #end
+#end
+################### MACRO END ##################
+
+<h2>User Activity in Polarion</h2>
+
+#set($licenseStatus = $licenseManager.getStatus.getStatus)
+
+#if($licenseStatus.equals("INFO"))
+  #new_info($licenseManager.getStatus.getMessage)
+#end
+
+#if($parametersArr.size() == 0)
+  <b style="color:green;">Please select parameters ! </b>
+#else
+
+  #set($userSessions = $userSessionHistoryService.getAllUsers())
+  #set($userSessionsMap = $objectFactory.newMap)
+
+  #foreach($user in $userSessions)
+    #set($void = $userSessionsMap.put($user.getUserId(), $user))
+  #end
+
+  ## Filter array users by input parameters.
+  #if($allUsers.size() > 0)
+    #set($filterUsersArr = [])
+
+    #foreach($user in $allUsers)
+      #set($activeUserFlag = false)
+
+      #if($filterUsersArr.size() < $parameterNumberUsers)
+        
+        #if(($parametersArr.contains("log") && !$parametersArr.contains("notLog")) || (!$parametersArr.contains("log") && $parametersArr.contains("notLog")))
+          #if($parametersArr.contains("log"))
+            #checkLoggedInForUser($user "log")
+          #elseif($parametersArr.contains("notLog"))
+            #checkLoggedInForUser($user "notLog")
+          #end
+        #else
+          #set($logginUserFlag = true)
+        #end
+        
+
+        #if(($parametersArr.contains("made") && !$parametersArr.contains("notMade")) || (!$parametersArr.contains("made") && $parametersArr.contains("notMade")))
+          #if($parametersArr.contains("made"))
+            #checkMadeChangesForUser($user "made")
+          #elseif($parametersArr.contains("notMade"))
+            #checkMadeChangesForUser($user "notMade")
+          #end
+        #else
+          #set($chandesUserFlag = true)
+        #end
+
+        #if(($parametersArr.contains("active") && !$parametersArr.contains("disabled")) || (!$parametersArr.contains("active") && $parametersArr.contains("disabled")))
+          #if($parametersArr.contains("active") && !$user.isDisabled())
+            #set($activeUserFlag = true)
+          #elseif($parametersArr.contains("disabled") && $user.isDisabled())
+            #set($activeUserFlag = true)
+          #end
+        #else
+          #set($activeUserFlag = true)
+        #end
+
+        #if($logginUserFlag && $chandesUserFlag && $activeUserFlag)
+          #set($void = $filterUsersArr.add($user))
+        #end
+      #end
+    #end
+
+    #if($filterUsersArr.size() > 0)
+      #set($allUsers = $filterUsersArr)
+    #end
+  #end
+
+## Rendering table
+<table class = "polarion-rpw-table-content">
+  <tr>
+    <td colspan=10><hr color=gray></td></tr>
+    <tr class="polarion-rpw-table-content-row">
+    <td><b>#</b></td> ##1
+    <td><b>Name</b></td> ##2
+    <td><b>ID</b></td> ##3
+    <td><b>e-mail</b></td> ##4
+    <td><b>Description</b></td> ##5
+    ##<td><b>License type</b></td> ##5
+    ##<td><b>License kind</b></td> ##5
+    <td><b>Last Login Date</b></td> ##6
+    <td><b>Changes</b></td> ##7
+    <td class='nowrap'><b>Last Change Date</b></td> ##8
+    <td class='nowrap'><b>Last Revision</b></td> ##9
+    <td style='text-align:center !important'><b>Disabled</b></td> ##10
+  </tr>
+
+#foreach($user in $allUsers)
+  #set($userID = $user.id)
+  #set($lastRevision = "")
+  #set($dateOfLastRev = "")
+  #set($Revision = $trackerService.getDataService().sqlSearch("SELECT rev.C_URI FROM REVISION rev WHERE rev.C_AUTHOR = '$userID' ORDER BY rev.C_CREATED DESC LIMIT 1"))
+  #set($Revisions = $trackerService.getDataService().sqlSearch("SELECT rev.C_URI FROM REVISION rev WHERE rev.C_AUTHOR = '$userID'"))
+  
+  #if($Revision.size > 0)
+    #set($lastRevision = $Revision.get(0))
+    #set($dateOfLastRev = $lastRevision.getCreated)
+  #end
+
+  #set($map = $objectFactory.newMap())
+
+  #set($M = $map.put("user", $!user))
+
+  #set($M = $map.put("name", "<td class='nowrap'>$!user.name</td>"))
+  
+  #set($M = $map.put("id", "<td>$!userID</td>"))
+  
+  #set($M = $map.put("email", "<td class='nowrap'>$!user.getEmail</td>"))
+  
+  #set($M = $map.put("description", "<td>$!user.getDescription.getContent</td>"))
+
+  ##set($M = $map.put("licenseType", "<td>$userSessionsMap.get($!user.id).getLicenseType().getId()</td>"))
+
+  ##set($M = $map.put("licenseKind", "<td>$userSessionsMap.get($!user.id).getLicenseKind().getId()</td>"))
+  
+  #set($lastLogin = "")
+  #if($userSessionsMap.containsKey($!user.id))
+    #set($lastLogin = "<td>$dateTool.format('yyyy-MM-dd HH:mm:ss', $userSessionsMap.get($!user.id).getLastSession().getDateLogin())</td>")
+  #else
+    #set($lastLogin = "<td><div style='color:gray'>Not found.</div></td>")
+  #end
+  #set($M = $map.put("lastLogin", "$lastLogin"))
+
+  #set($M = $map.put("sortByNumberOfChanges", $Revisions.size))
+  
+  #set($M = $map.put("numberOfChanges", "<td>$Revisions.size</td>"))
+
+  #if(!$lastRevision.isEmpty())
+    #set($lastChangeDate = "<td class='nowrap'>$dateTool.format('yyyy-MM-dd',$dateOfLastRev) ($dateTool.difference($dateOfLastRev, $today) ago)</td>")
+  #else
+    #set($lastChangeDate = "<td class='nowrap'><div style='color:gray'>No changes found</div></td>")
+  #end
+  #set($M = $map.put("lastChangeDate", $lastChangeDate))
+  
+  
+  #if(!$lastRevision.isEmpty())
+    #set($revNumber = $lastRevision.Name)
+    #set($lastREVISION = "<td style='text-align:center !important'>$transaction.revisions().getBy().id($revNumber).render.withLinks</td>")
+  #else
+    #set($lastREVISION = "<td style='text-align:center !important'><span style='color:gray'>&ndash;</span></td>")
+  #end
+
+  #set($M = $map.put("lastREVISION", $lastREVISION))
+  
+  #if($user.isDisabled())
+    #set($userDisabled = "<td style='text-align:center !important'><img src='/polarion/icons/default/enums/testrun_status_failed.png'> <span style='color:red'>Disabled</span></td>")
+  #else
+    #set($userDisabled = "<td></td>")
+  #end
+  
+  #set($M = $map.put("userDisabled", $userDisabled))  
+  #set($M = $arrayTable.add($map))
+#end
+
+#foreach($object in $sortTool.sort($arrayTable, "sortByNumberOfChanges:desc"))
+  <tr class="polarion-rpw-table-content-row">
+    <td>$velocityCount</td> ##1
+    $object.get("name") ##2
+    $object.get("id") ##3
+    $object.get("email") ##4
+    $object.get("description") ##5
+    ##$object.get("licenseType") ##5
+    ##$object.get("licenseKind") ##5
+    $object.get("lastLogin") ##5
+    $object.get("numberOfChanges") ##6
+    $object.get("lastChangeDate") ##7
+    $object.get("lastREVISION") ##8
+    $object.get("userDisabled")  ##9
+  </tr>
+#end
+
+</table>
+
+#end

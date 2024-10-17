@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module id="com.garantis.polarion.extension.license_analyzer" version="1.0.0">
+	<service-point id="parseLogFilesJobUnitFactory" interface="com.polarion.platform.jobs.IJobUnitFactory">
+		<invoke-factory>
+			<construct class="com.garantis.polarion.extension.license.analyzer.job.ParseLogFilesJobUnitFactory">
+			</construct>
+		</invoke-factory>
+	</service-point>
+	<contribution configuration-id="com.polarion.platform.jobs.configuration">
+		<jobUnitFactory name="license_analyzer.job" factory="parseLogFilesJobUnitFactory"/>
+	</contribution>
+	
+	<contribution configuration-id="com.polarion.alm.richpages.velocityContext">
+		<item key="userSessionHistoryService" value="instance:com.garantis.polarion.extension.license.analyzer.service.impl.UserSessionHistoryService" />
+		<item key="statisticService" value="instance:com.garantis.polarion.extension.license.analyzer.service.impl.StatisticService" />
+		<item key="licenseAnalyzerReport" value="instance:com.garantis.polarion.extension.license.analyzer.report.LicenseAnalyzerReport" />
+	</contribution>
+	<contribution configuration-id="com.polarion.alm.wiki.renderingContext">
+		<item key="userSessionHistoryService" value="instance:com.garantis.polarion.extension.license.analyzer.service.impl.UserSessionHistoryService" />
+		<item key="statisticService" value="instance:com.garantis.polarion.extension.license.analyzer.service.impl.StatisticService" />
+		<item key="licenseAnalyzerReport" value="instance:com.garantis.polarion.extension.license.analyzer.report.LicenseAnalyzerReport" />
+	</contribution>
+	
+	<contribution configuration-id="com.polarion.xray.webui.administrationPageExtenders">
+		<extender name="Statistics" 
+				parentNodeName="Garantis License Analyzer" 
+				parentNodeIconUrl="/polarion/license-analyzer-admin/assets/analysis.svg"
+				iconUrl="/polarion/icons/default/topicIconsSmall/configurationProperties.svg" 
+				pageUrl="/polarion/license-analyzer-admin/pages/statistic.jsp"
+				projectScope="false" 
+				projectGroupScope="true" 
+				repositoryScope="true"/>
+		<extender name="Swagger UI" 
+				parentNodeName="Garantis License Analyzer" 
+				parentNodeIconUrl="/polarion/license-analyzer-admin/assets/analysis.svg"
+				iconUrl="/polarion/license-analyzer-admin/assets/docs.svg"
+				pageUrl="/polarion/license-analyzer/rest/swagger" 
+				projectScope="true" 
+				projectGroupScope="true" 
+				repositoryScope="true"/>
+		<extender name="Open Java API" 
+				parentNodeName="Garantis License Analyzer" 
+				parentNodeIconUrl="/polarion/license-analyzer-admin/assets/analysis.svg"
+				iconUrl="/polarion/license-analyzer-admin/assets/docs.svg"
+				pageUrl="/polarion/license-analyzer-admin/doc/index.html"
+				projectScope="true" 
+				projectGroupScope="true" 
+				repositoryScope="true"/>
+		<extender name="About" 
+				parentNodeName="Garantis License Analyzer" 
+				parentNodeIconUrl="/polarion/license-analyzer-admin/assets/analysis.svg"
+				iconUrl="/polarion/license-analyzer-admin/assets/info.svg"
+				pageUrl="/polarion/license-analyzer-admin/pages/about.jsp"
+				projectScope="true" 
+				projectGroupScope="true" 
+				repositoryScope="true"/>
+			<extender name="License information" 
+				parentNodeName="Garantis License Analyzer" 
+				parentNodeIconUrl="/polarion/license-analyzer-admin/assets/analysis.svg"
+				iconUrl="/polarion/icons/default/topicIconsSmall/license.svg" 
+				pageUrl="/polarion/license-analyzer-admin/pages/license_info.jsp"
+				projectScope="false" 
+				projectGroupScope="true" 
+				repositoryScope="true"/>
+	</contribution>
+	
+</module>

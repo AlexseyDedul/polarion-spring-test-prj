@@ -1,0 +1,76 @@
+
+#set($counter = 0)
+
+#set($projectID = $pageParameters.project.singleValue.id)
+
+#set($project = $projectService.getProject($projectID))
+
+#set($projectUsers = $projectService.getProjectUsers($project))
+#set($projectRoles = $trackerService.getDataService.getSecurityService.getContextRoles($project.contextId))
+#set($context = $trackerService.getTrackerProject($projectID).getContextId())
+
+
+#set($currentUser = $trackerService.getTrackerUser($trackerService.dataService.securityService.currentUser))
+#set($currentUser = $trackerService.getTrackerUser($trackerService.dataService.securityService.currentUser))
+#set($admins = $trackerService.getDataService.getSecurityService.getUsersForGlobalRole("admin"))
+#set($currentLocalRoles = $trackerService.dataService.securityService.getContextRolesForUser($currentUser.getId(),$context))
+#set($projectLead =$trackerService.getTrackerProject($projectID).getLead().getId())
+#set($t1 = $dateTool.getDate())
+
+#if($currentUser.getId.equals($projectLead) || $currentLocalRoles.contains("project_admin") || $currentLocalRoles.contains("project_manager") || $admins.contains("$currentUser.getId"))
+
+<h1>Users and their Roles in $project.name</h1>
+
+<style>
+table.alex-table-1 {border-collapse:collapse;border:1px solid grey;width: 100%;}
+tr.alex-th-1 th {text-align:center;padding:5px;background-color:#f2f2f2; border:1px solid grey;}
+tr.alex-td-1 td {vertical-align:top; padding: 5px;border-top:1px solid grey;border-right:1px solid grey; }
+td.c1 {
+    padding: 7px;
+}
+th     {
+    padding: 7px;
+    text-align: center;
+}
+td.light {
+    padding: 7px;
+}
+td.light:hover {
+  background-color: yellow!important;
+}
+</style>
+<table class="alex-table-1" >
+<tr class="alex-th-1"><th>#</th><th>User ID</th><th>User Name</th> 
+#foreach($role in $projectRoles)
+  <th>$role</th>
+#end
+</tr>
+#foreach($user in $projectUsers)
+  #if(!$user.isUnresolvable())
+    #set($counter = $counter + 1)
+
+  #set($userID = $user.id)
+
+    #set($localRoles = false)
+    #set($localRoles = $trackerService.dataService.securityService.getContextRolesForUser($user.getId(),$context))
+    <tr class="alex-td-1"><td class='c1' style="text-align: center">$counter</td><td class='c1'>$user.id</td><td class='c1'>$user.name</td>
+
+
+    #foreach($role in $projectRoles)
+      #set($plus = "")
+      #set($bgColor = "")
+      #set($class = "")
+      #set($title = "")
+      #if($localRoles.contains($role))
+        #set($plus = "+")
+        #set($bgColor = ";background-color:#3fffac") ## more green: #42f48c
+        #set($class = "class='light'")
+        #set($title = "title = '${user.name} is ${role} in ${projectID}'")
+      #end
+        <td $class $title style="text-align: center $bgColor">$plus</td>
+    #end
+  #end
+#end
+</table>
+
+#end

@@ -1,0 +1,87 @@
+## @Version=1@
+## 
+## File Name: userStatistics.vm
+## Widget Name: Statistics
+## Description: Count all statistics for users
+##
+## Date               Author          Description of Change
+## ---------------------------------------------------------------------------------------------
+## 01-Dec-2023       AD              Initial Release
+## 27-May-2024       AD              Updated last login session for users
+## ====================================================================================================
+
+## Text Constant
+## -----------------------------------
+
+#macro(new_info $text)
+  <div class="polarion-infomessage"><span class="polarion-messagetype"> Info: </span>$text</div>
+#end
+
+<h2>Statistics</h2>
+
+#set($licenseStatus = $licenseManager.getStatus.getStatus)
+
+#if($licenseStatus.equals("INFO"))
+  #new_info($licenseManager.getStatus.getMessage)
+#end
+
+#set($allUsers = $projectService.getUsers())
+#set($style = "style='padding: 5px; font-size: 1.1em; font-weight:bold'")
+#set($counterDisabled = 0)
+#set($lastLoginCount = 0)
+#set($lastChangesCount = 0)
+
+#set($userSessions = $userSessionHistoryService.getAllUsers())
+#set($userSessionsMap = $objectFactory.newMap)
+
+#foreach($user in $userSessions)
+  #set($void = $userSessionsMap.put($user.getUserId(), $user))
+#end
+
+#foreach($user in $allUsers)
+  ## Count of disabled users
+  #if($user.isDisabled())
+    #set($counterDisabled = $counterDisabled + 1)
+  #end
+
+  ## Count last loggin of users
+  #if($userSessionsMap.containsKey($!user.id))
+    #set($lastLoginDate = $userSessionsMap.get($!user.id).getLastSession().getDateLogin())
+
+    #if($lastLoginDate)
+      #set($lastLoginCount = $lastLoginCount + 1)
+    #else
+      #set($compareRes = $dateTool.difference($lastLoginDate, $dateTool.getDate()))
+      #if($mathTool.toInteger($compareRes.getMonths()) > $mathTool.toInteger(2))
+        #set($lastLoginCount = $lastLoginCount + 1)
+      #end    
+    #end
+  #end
+  
+  ## Count last changes of users
+  #set($Revision = $trackerService.getDataService().sqlSearch("SELECT rev.C_URI FROM REVISION rev WHERE rev.C_AUTHOR = '$user.id' ORDER BY rev.C_CREATED DESC LIMIT 1"))
+  #if($Revision.size > 0)
+    #set($lastRevision = $Revision.get(0))
+    #set($dateOfLastRev = $lastRevision.getCreated)
+    #set($lastChange = $dateTool.difference($dateOfLastRev, $dateTool.getDate()))
+    #if($mathTool.toInteger($lastChange.getMonths()) > $mathTool.toInteger(2))
+      #set($lastChangesCount = $lastChangesCount + 1)
+    #end 
+  #else
+    #set($lastChangesCount = $lastChangesCount + 1)
+  #end
+  
+#end
+
+<table>
+<tr><td $style>Total Number of Users in Polarion: </td><td></td><td style="padding: 5px; color: blue; font-size: 1.2em; font-weight:bold">$allUsers.size</td></tr>
+<tr><td $style>Disabled Users: </td><td></td><td style="padding: 5px; color: red; font-size: 1.2em; font-weight:bold">$counterDisabled</td></tr>
+<tr><td $style>Active Users: </td><td></td><td style="padding: 5px; color: green; font-size: 1.2em; font-weight:bold">#set($activeUsers = $allUsers.size - $counterDisabled) $activeUsers</td></tr>
+
+<tr><td $style>Haven't logged in for the last 3 months: </td><td></td><td style="padding: 5px; color: red; font-size: 1.2em; font-weight:bold">#set($loggedCount = $allUsers.size - $lastLoginCount) $loggedCount</td></tr>
+<tr><td $style>Logged in during the last 3 months: </td><td></td><td style="padding: 5px; color: green; font-size: 1.2em; font-weight:bold">$lastLoginCount</td></tr>
+
+<tr><td $style>Haven't made any changes in the last 3 months: </td><td></td><td style="padding: 5px; color: red; font-size: 1.2em; font-weight:bold">$lastChangesCount</td></tr>
+<tr><td $style>Made changes in the last 3 months: </td><td></td><td style="padding: 5px; color: green; font-size: 1.2em; font-weight:bold">#set($changesCount = $allUsers.size - $lastChangesCount) $changesCount</td></tr>
+</table>
+<br>

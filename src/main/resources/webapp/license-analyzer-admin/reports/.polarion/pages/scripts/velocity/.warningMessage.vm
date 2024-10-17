@@ -1,0 +1,5 @@
+#macro(new_warning $text)
+  <div class="polarion-warningmessage"><span class="polarion-messagetype"> Warning: </span>$text</div>
+#end
+
+#new_warning($licenseManager.getStatus.getMessage)
